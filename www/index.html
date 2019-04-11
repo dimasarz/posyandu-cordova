@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
-  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
-  <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
-  <script  src="https://code.jquery.com/jquery-3.4.0.js"  integrity="sha256-DYZMCC8HTC+QDr5QNaIcfR7VSPtcISykd+6eSmBW5qo="  crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+    <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+    <script  src="https://code.jquery.com/jquery-3.4.0.js"  integrity="sha256-DYZMCC8HTC+QDr5QNaIcfR7VSPtcISykd+6eSmBW5qo="  crossorigin="anonymous"></script>
 </head>
 <body>
     <ons-navigator swipeable id="myNavigator" page="page1.html"></ons-navigator>
@@ -37,9 +37,55 @@
                 </span> <br>
                 <button class="button addData">Tambah</button>
             </div>
-            
+            <ons-alert-dialog id="my-alert-dialog" modifier="rowfooter">
+                <div class="alert-dialog-title">Tambah Data</div>
+                <div class="alert-dialog-content">
+                    Apakah anda yakin akan menambah data ini?
+                </div>
+                <div class="alert-dialog-footer">
+                    <ons-alert-dialog-button onclick="hideAlertDialog()">Tidak</ons-alert-dialog-button>
+                    <ons-alert-dialog-button onclick="addData()">Ya</ons-alert-dialog-button>
+                </div>
+            </ons-alert-dialog>
         </ons-page>
     </template>
+
+    <template id="edit.html">
+        <ons-page id="editPage">
+            <ons-toolbar>
+                <div class="center">Update Data</div>
+                <div class="left"><ons-back-button>Page 1</ons-back-button></div>
+                <div class="center"></div>
+            </ons-toolbar>
+            <br>
+            <div style="text-align: center">
+                <span>
+                    <input type="hidden" class="id_edit">
+                    <div><input class="text-input text-input--material posyandu nama_edit" placeholder="Nama Posyandu" type="text" required></div>
+                    <br />
+                    <div><input class="text-input text-input--material alamat alamat_edit" placeholder="Alamat" type="text" required></div>
+                </span> <br>
+                <button class="button" onclick="simpanData()">Simpan</button>
+            </div>
+
+            <ons-alert-dialog id="my-alert-dialog" modifier="rowfooter">
+                <div class="alert-dialog-title">Tambah Data</div>
+                <div class="alert-dialog-content">
+                    Apakah anda yakin akan menyimpan data ini?
+                </div>
+                <div class="alert-dialog-footer">
+                    <ons-alert-dialog-button onclick="hideAlertDialog()">Tidak</ons-alert-dialog-button>
+                    <ons-alert-dialog-button onclick="simpanData()">Ya</ons-alert-dialog-button>
+                </div>
+            </ons-alert-dialog>
+        </ons-page>
+    </template>
+
+<ons-alert-dialog id="loading" modifier="rowfooter">
+    <div class="alert-dialog-content" style="text-align: center">
+        <ons-progress-circular indeterminate></ons-progress-circular>
+    </div>
+</ons-alert-dialog>
     
     <script>
         window.onload = function() {
@@ -55,23 +101,25 @@
             } else if (page.id === 'tambahPage') {
                 page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
                 page.querySelector('.addData').onclick = function() {
-                    let posyandu    = page.querySelector('.posyandu').value;
-                    let alamat      = page.querySelector('.alamat').value;
-                    console.log(posyandu, alamat)
-                    document.querySelector('#myNavigator').popPage();
+                    page.querySelector('#my-alert-dialog').show();
                 }
             }
         });
 
+        function hideAlertDialog() {
+            document.querySelector('#my-alert-dialog').hide();
+        }
+
         function getData() {
+            $('.dataPosyandu').html('<div style="text-align:center"><ons-progress-circular indeterminate></ons-progress-circular></div>');
             card = ""
             $.getJSON( "http://dimasarz.000webhostapp.com/ci/api/posyandu", function( data ) {
                 $.each(data,function(i,v) {
                     card = card + `
                     <ons-list-item>
-                        <span class="list-item__title">${v.nama}</span>
-                        <span class="list-item__subtitle">${v.alamat}</span>
-                        <div class="right item_del">
+                        <span onclick="editItem(${v.id})" class="list-item__title">${v.nama}</span>
+                        <span onclick="editItem(${v.id})" class="list-item__subtitle">${v.alamat}</span>
+                        <div class="right" onclick="deleteItem(${v.id})">
                             <ons-icon style="color: grey; padding-left: 4px" icon="ion-ios-trash-outline, material:md-delete"></ons-icon>
                         </div>
                     </ons-list-item>
@@ -79,6 +127,65 @@
                 })
             $('.dataPosyandu').html(card);
             });
+        }
+
+        function addData() {
+            document.querySelector('#my-alert-dialog').hide();
+            loadingShow();
+            
+            let nama    = document.querySelector('.posyandu').value;
+            let alamat      = document.querySelector('.alamat').value;
+            $.post('http://dimasarz.000webhostapp.com/ci/api/posyandu/add',{nama: nama, alamat:alamat})
+            .done(function(data) {
+                loadingHide();
+                document.querySelector('#myNavigator').popPage();
+                getData();
+            })
+        }
+
+        function deleteItem(id) {
+            loadingShow()
+            $.getJSON( "http://dimasarz.000webhostapp.com/ci/api/posyandu/delete?id="+id, function( data ) {
+                loadingHide()
+                getData();
+            })
+        }
+
+        function editItem(i) {
+            document.querySelector('#myNavigator').pushPage('edit.html');
+            loadingShow();
+
+            $.getJSON( "http://dimasarz.000webhostapp.com/ci/api/posyandu?id="+i, function( data ) {
+                document.querySelector('.id_edit').value       = data.id
+                document.querySelector('.nama_edit').value     = data.nama
+                document.querySelector('.alamat_edit').value   = data.alamat
+            })
+            .done(function() {
+                loadingHide();
+            })
+        }
+
+        function simpanData() {
+            document.querySelector('#my-alert-dialog').hide();
+            loadingShow();
+            
+            let id      = document.querySelector('.id_edit').value;
+            let nama    = document.querySelector('.nama_edit').value;
+            let alamat  = document.querySelector('.alamat_edit').value;
+            $.post('http://dimasarz.000webhostapp.com/ci/api/posyandu/edit',{id:id, nama: nama, alamat:alamat})
+            .done(function(data) {
+                loadingHide();
+                document.querySelector('#myNavigator').popPage();
+                getData();
+            })
+        }
+
+        function loadingShow() {
+            document.querySelector('#loading').show();
+        }
+
+        function loadingHide(){
+            document.querySelector('#loading').hide();
         }
     </script>
 </body>
