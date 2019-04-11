@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+  <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+  <script  src="https://code.jquery.com/jquery-3.4.0.js"  integrity="sha256-DYZMCC8HTC+QDr5QNaIcfR7VSPtcISykd+6eSmBW5qo="  crossorigin="anonymous"></script>
+</head>
+<body>
+    <ons-navigator swipeable id="myNavigator" page="page1.html"></ons-navigator>
+    <template id="page1.html">
+        <ons-page id="page1">
+            <ons-toolbar>
+                <div class="center">Posyandu</div>
+                <div class="right">
+                    <button class="toolbar-button toolbar-button--outline btnTambah">
+                        <i class="fa fa-plus" style="font-size:17px"></i> Tambah
+                    </button>
+                </div>
+            </ons-toolbar><br>
+            <ons-list class="dataPosyandu"></ons-list>
+        </ons-page>
+    </template>
+    
+    <template id="tambah.html">
+        <ons-page id="tambahPage">
+            <ons-toolbar>
+                <div class="left"><ons-back-button>Page 1</ons-back-button></div>
+                <div class="center"></div>
+            </ons-toolbar>
+            <br>
+            <div style="text-align: center">
+                <span>
+                    <div><input class="text-input text-input--material posyandu" placeholder="Nama Posyandu" type="text" required></div>
+                    <br />
+                    <div><input class="text-input text-input--material alamat" placeholder="Alamat" type="text" required></div>
+                </span> <br>
+                <button class="button addData">Tambah</button>
+            </div>
+            
+        </ons-page>
+    </template>
+    
+    <script>
+        window.onload = function() {
+            getData();
+        }
+        document.addEventListener('init', function(event) {
+            var page = event.target;
+
+            if (page.id === 'page1') {
+                page.querySelector('.btnTambah').onclick = function() {
+                    document.querySelector('#myNavigator').pushPage('tambah.html', {data: {title: 'Tambah Data'}});
+                };
+            } else if (page.id === 'tambahPage') {
+                page.querySelector('ons-toolbar .center').innerHTML = page.data.title;
+                page.querySelector('.addData').onclick = function() {
+                    let posyandu    = page.querySelector('.posyandu').value;
+                    let alamat      = page.querySelector('.alamat').value;
+                    console.log(posyandu, alamat)
+                    document.querySelector('#myNavigator').popPage();
+                }
+            }
+        });
+
+        function getData() {
+            card = ""
+            $.getJSON( "http://dimasarz.000webhostapp.com/ci/api/posyandu", function( data ) {
+                $.each(data,function(i,v) {
+                    card = card + `
+                    <ons-list-item>
+                        <span class="list-item__title">${v.nama}</span>
+                        <span class="list-item__subtitle">${v.alamat}</span>
+                        <div class="right item_del">
+                            <ons-icon style="color: grey; padding-left: 4px" icon="ion-ios-trash-outline, material:md-delete"></ons-icon>
+                        </div>
+                    </ons-list-item>
+                    `
+                })
+            $('.dataPosyandu').html(card);
+            });
+        }
+    </script>
+</body>
+</html>
